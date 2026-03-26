@@ -3,34 +3,40 @@ local jwtVerify = require "jwt_verify"
 local ck = require "resty.cookie"
 
 function _M.go()
-    -- 获取cookie
-    local cookie = ck:new()
+    local cookie, err = ck:new()
     if not cookie then
-        ngx.log(ngx.ERR, "cookie is nil")
         return ngx.exit(500)
     end
 
-    local token = cookie:get("accessToken")
-    if not token or token == "" then
-        -- 记录错误日志
-        ngx.log(ngx.ERR, "token is empty")
-        -- 返回错误响应
-        ngx.header["Status"] = 400
+    -- 1. 获取 accessToken
+    local access_token = cookie:get("accessToken")
+    if not access_token then
+        ngx.log(ngx.ERR, "accessToken empty")
         return ngx.exit(400)
     end
 
-    -- 验证token
-    local result = jwtVerify.verifyToken(token)
-    if result.verified == false then
-        -- 记录错误日志
-        ngx.log(ngx.ERR, "token verify failed")
-        -- 返回错误响应
-        ngx.header["Content-Type"] = "text/plain; charset=utf-8"
-        ngx.header["Status"] = 401
+    -- 2. 验证 accessToken
+    local result = jwtVerify.verifyToken(access_token)
+    if result.verified then
+        ngx.req.set_header("X-Auth-Passed", "true")
+        return ngx.exec("@proxy_to_frontend")
+    end
+
+    -- 3. accessToken 失效 → 用 refreshToken
+    local refresh_token = cookie:get("refreshToken")
+    if not refresh_token then
+        ngx.log(ngx.ERR, "refreshToken empty")
+        return ngx.exit(400)
+    end
+
+    -- 4. 验证 refreshToken 本身
+    local refresh_result = jwtVerify.verifyToken(refresh_token)
+    if not refresh_result.verified then
+        ngx.log(ngx.ERR, "refreshToken verify failed")
         return ngx.exit(401)
     end
 
-    -- 验证成功，添加标识头和用户信息
+    -- 6. 全部验证通过
     ngx.req.set_header("X-Auth-Passed", "true")
     return ngx.exec("@proxy_to_frontend")
 end
