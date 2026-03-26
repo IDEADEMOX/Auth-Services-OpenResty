@@ -16,6 +16,10 @@
 ./nginx.exe -p `pwd` -c conf/nginx.conf
 ```
 
+## 第三方库
+
+- [OpenResty OPM](https://opm.openresty.org/)：作为 Lua 包管理器，用于安装和管理 Lua 库依赖
+
 ## 配置说明
 
 - 关闭 Lua 缓存，确保每次请求都重新编译 Lua 代码
