@@ -16,13 +16,36 @@
 ./nginx.exe -p `pwd` -c conf/nginx.conf
 ```
 
+## 配置说明
+
+- 关闭 Lua 缓存，确保每次请求都重新编译 Lua 代码
+
+```nginx
+lua_code_cache off;
+# off：关闭缓存，on：开启缓存（默认）
+# 生产环境建议注释或者开启，避免缓存问题导致的性能问题
+```
+
+- 控制 Nginx 是否以守护进程（后台进程）方式运行，默认开启
+
+```nginx
+daemon off;
+# off：关闭守护进程，on：开启守护进程（默认）
+# 开发环境建议关闭，方便调试和监控
+```
+
 ## 项目结构
 
 ```
 ├── conf  # 配置文件目录
 │   ├── nginx.conf
-├── logs  # 日志目录
+├── logs  # 日志目录（自动生成）
 │   ├── error.log
+│   ├── access.log
 ├── services  # 服务目录
+│   ├── *.lua
+├── package  # 包目录
+│   ├── *.lua
+├── utils  # 工具目录
 │   ├── *.lua
 ```
